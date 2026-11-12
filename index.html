@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#A9D3EE" id="themeColor">
+<title>Gebedstijden</title>
+<meta name="description" content="Gebedstijden voor elke plaats, rustig en zonder reclame.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gebedstijden">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Eén scherm rond de dag: de hemel bovenaan volgt het moment, daaronder het volgende gebed en de lijst. */
+:root{
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  /* dag */
+  --sky:linear-gradient(180deg,#A9D3EE 0,#DDEEF6 290px,#F4F8FA 400px);
+  --ground:#F4F8FA; --fg:#0F2226; --sub:#2E4A52; --muted:#4A6369; --dim:#5C7075;
+  --accent:#0B6470; --on-accent:#FFFFFF; --sun:#F2A81D; --hole:#FFFFFF;
+  --card:#FFFFFF; --border:#D5DFE1; --shuruq:#5C7075; --seg:#E6ECEE; --amber:#8A5A00;
+}
+:root[data-sky="dusk"]{
+  --sky:linear-gradient(180deg,#232B55 0,#5A3A68 190px,#8A4E60 290px,#171B33 400px);
+  --ground:#171B33; --fg:#F3EFEA; --sub:#D3D6EA; --muted:#A9AFCB; --dim:#A3A9C7;
+  --accent:#F4B26A; --on-accent:#1B1410; --sun:#FFB25E; --hole:#5A3A68;
+  --card:rgba(255,255,255,.07); --border:rgba(255,255,255,.16); --seg:rgba(255,255,255,.1); --amber:#F2C27A; --shuruq:#A3A9C7;
+}
+:root[data-sky="dawn"]{
+  --sky:linear-gradient(180deg,#0B1230 0,#1C2C5E 190px,#33457A 290px,#0D1226 400px);
+  --ground:#0D1226; --fg:#E6EAF5; --sub:#C3CBE6; --muted:#9AA3C2; --dim:#9AA3C2;
+  --accent:#9DB8FF; --on-accent:#0B1230; --sun:#F2C27A; --hole:#1C2C5E;
+  --card:rgba(255,255,255,.07); --border:rgba(255,255,255,.16); --seg:rgba(255,255,255,.1); --amber:#F2C27A; --shuruq:#F2C27A;
+}
+:root[data-sky="night"]{
+  --sky:linear-gradient(180deg,#060A1C 0,#0E1736 190px,#162149 290px,#0A0E20 400px);
+  --ground:#0A0E20; --fg:#E6EAF5; --sub:#C3CBE6; --muted:#9AA3C2; --dim:#9AA3C2;
+  --accent:#9DB8FF; --on-accent:#0B1230; --sun:#F2C27A; --hole:#0E1736;
+  --card:rgba(255,255,255,.07); --border:rgba(255,255,255,.16); --seg:rgba(255,255,255,.1); --amber:#F2C27A; --shuruq:#9AA3C2;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--ground);color-scheme:light}
+html[data-sky="dusk"],html[data-sky="dawn"],html[data-sky="night"]{color-scheme:dark}
+body{margin:0;font-family:var(--body);color:var(--fg);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.screen{max-width:430px;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;gap:16px;
+  padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+#main{background:var(--sky)}
+.sub{background:var(--ground);gap:24px}
+.head{display:flex;flex-direction:column;gap:4px}
+.place{display:flex;align-items:center;gap:8px;min-height:44px;font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.01em}
+.place span{overflow-wrap:anywhere}
+.date{font-size:14px;color:var(--sub)}
+#arc{display:block;width:100%;height:auto;overflow:visible}
+#arc text{font-family:var(--body);font-size:11px;fill:var(--sub)}
+#arc text.next{font-weight:600;fill:var(--accent)}
+.label{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.next{display:flex;flex-direction:column;gap:2px}
+.next-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--display);font-weight:700;font-size:clamp(38px,12.3vw,48px);line-height:1.1;letter-spacing:-.02em}
+.next-row .t{color:var(--accent)}
+.count{font-size:15px;color:var(--muted);min-height:1.5em}
+.list{display:flex;flex-direction:column;gap:2px;font-size:16px;margin:0;padding:0;list-style:none}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:50px;padding:0 14px;border-radius:12px;font-weight:500}
+.list li.past{color:var(--dim);font-weight:400}
+.list li.shuruq{color:var(--shuruq)}
+.list li.now{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.list li.is-next{background:var(--accent);color:var(--on-accent);font-weight:600}
+.list small{font-size:12px;font-weight:400}
+.list li.now small{font-weight:600;color:var(--accent)}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.foot button{display:flex;align-items:center;gap:6px;min-height:44px}
+.msg{font-size:15px;color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.pill{min-height:44px;padding:0 16px;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:600}
+/* locatiepaneel */
+.back{display:flex;align-items:center;gap:4px;margin-left:-12px}
+.back button{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.back h1{margin:0;font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.01em}
+.group{display:flex;flex-direction:column;gap:12px}
+.search{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-radius:12px;background:var(--card);border:1.5px solid var(--accent);color:var(--accent)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:var(--fg)}
+.search input::placeholder{color:var(--dim)}
+.results{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;font-size:16px}
+.results button{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;padding:6px 14px;width:100%}
+.results button+button{border-top:1px solid var(--border)}
+.results b{font-weight:600}
+.results span,.saved span span+span{font-size:13px;color:var(--dim);text-align:right}
+.hint{font-size:14px;color:var(--muted);margin:0}
+.here{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:12px;border:1px solid var(--border);font-size:16px;font-weight:500;color:var(--accent)}
+.saved{display:flex;flex-direction:column;gap:8px;font-size:16px}
+.saved .row{display:flex;align-items:stretch;border-radius:12px;background:var(--card);border:1px solid var(--border)}
+.saved .row.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.saved .pick{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:60px;padding:8px 14px}
+.saved .pick>span{display:flex;flex-direction:column}
+.saved b{font-weight:600}
+.saved .pick>span span{font-size:13px;color:var(--dim);text-align:left}
+.saved .row.active .pick>span span{color:var(--on-accent)}
+.saved .del{width:48px;display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.icon-btn{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center}
+/* instellingen */
+.card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;font-size:16px}
+.card>*+*{border-top:1px solid var(--border)}
+.rowbtn,.opt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:8px 14px}
+.rowbtn{min-height:64px}.opt{min-height:54px}
+.rowbtn>span,.opt>span{display:flex;flex-direction:column;min-width:0}
+.rowbtn b,.opt b{font-weight:600}
+.rowbtn>span span,.opt>span span{font-size:13px;color:var(--dim)}
+.opt svg{color:var(--accent);flex:none}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:60px;padding:0 14px;font-weight:500}
+.setrow label{display:flex;flex-direction:column}
+.setrow small{font-size:13px;font-weight:400;color:var(--dim)}
+.setrow input[type=time]{font:inherit;font-weight:600;color:var(--accent);background:var(--seg);border:0;border-radius:8px;min-height:38px;padding:0 10px}
+.seg{display:flex;padding:3px;border-radius:10px;background:var(--seg)}
+.seg button{min-height:38px;padding:0 13px;border-radius:8px;font-size:14px;font-weight:400;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
+.step{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 6px 0 14px;font-weight:500}
+.step .ctl{display:flex;align-items:center}
+.step button{width:44px;height:44px;text-align:center;font-size:22px;color:var(--accent)}
+.step .val{width:40px;text-align:center;font-weight:400}
+.step .val.set{font-weight:600;color:var(--accent)}
+.grouphead{display:flex;flex-direction:column;gap:2px}
+.note{margin-top:auto;font-size:13px;line-height:1.45;color:var(--muted)}
+/* maand */
+#month{gap:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mhead{display:flex;justify-content:space-between;align-items:center}
+.mhead .back{margin-left:-4px}
+.mnav{display:flex;align-items:center;font-size:14px;color:var(--muted)}
+.mnav button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--fg)}
+.mtable{font-size:13px}
+.mtable.card>*+*{border-top:0}
+.mrow{display:grid;grid-template-columns:46px repeat(6,minmax(0,1fr));align-items:center;column-gap:4px;min-height:30px;padding:0 10px;text-align:right}
+.mrow span:first-child{text-align:left;font-weight:500}
+.mrow span:nth-child(3){color:var(--amber)}
+.mrow+.mrow{border-top:1px solid var(--border)}
+.mrow.mh{min-height:34px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border)}
+.mrow.fri span:first-child{font-weight:600;color:var(--accent)}
+.mrow.today{background:var(--accent);color:var(--on-accent);font-weight:600}
+.mrow.today span{color:inherit}
+.mfoot{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);padding:0 8px}
+</style>
+</head>
+<body>
+<main class="screen" id="main">
+  <div class="head">
+    <div class="toprow">
+    <button class="place" id="placeBtn" aria-label="Locatie wijzigen">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <span id="placeName"></span>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <button class="icon-btn" id="setBtn" aria-label="Instellingen">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+    </button>
+    </div>
+    <div class="date" id="date"></div>
+  </div>
+  <svg id="arc" viewBox="0 0 342 190" role="img" aria-label="Boog van de dag"></svg>
+  <div class="next">
+    <p class="label" id="nextLabel">Volgend gebed</p>
+    <div class="next-row"><span id="nextName">&nbsp;</span><span class="t" id="nextTime"></span></div>
+    <div class="count" id="count"></div>
+  </div>
+  <ul class="list" id="list"></ul>
+  <div class="msg" id="msg" hidden>
+    <span>De tijden konden niet geladen worden. Controleer je internetverbinding.</span>
+    <button class="pill" id="retry">Opnieuw proberen</button>
+  </div>
+  <div class="foot">
+    <span id="methodName"></span>
+    <button id="monthBtn">Maand</button>
+    <button id="dayBtn"></button>
+  </div>
+</main>
+
+<section class="screen sub" id="panel" hidden aria-label="Locatie kiezen">
+  <div class="back">
+    <button id="closeBtn" aria-label="Terug">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <h1>Locatie</h1>
+  </div>
+  <div class="group">
+    <label class="label" for="q">Zoek een plaats</label>
+    <div class="search">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <input id="q" type="search" placeholder="Stad of gemeente" autocomplete="off" autocapitalize="words" spellcheck="false">
+    </div>
+    <div class="results" id="results" hidden></div>
+    <p class="hint" id="searchHint" hidden></p>
+  </div>
+  <div class="group">
+    <button class="here" id="hereBtn">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2.5v3.5M12 18v3.5M2.5 12H6M18 12h3.5"/></svg>
+      Gebruik mijn huidige locatie
+    </button>
+    <p class="hint" id="hereHint" hidden></p>
+  </div>
+  <div class="group">
+    <p class="label">Bewaarde plaatsen</p>
+    <div class="saved" id="saved"></div>
+  </div>
+</section>
+
+<section class="screen sub" id="settings" hidden aria-label="Instellingen">
+  <div class="back"><button id="setClose" aria-label="Terug"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><h1>Instellingen</h1></div>
+  <div class="group">
+    <p class="label">Berekening</p>
+    <div class="card">
+      <button class="rowbtn" id="methodBtn" aria-expanded="false">
+        <span><b id="mName"></b><span id="mDesc"></span></span>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="methodList" hidden></div>
+      <div class="setrow"><span>Asr</span><div class="seg" id="segAsr"></div></div>
+      <div class="setrow"><label for="jum"><span>Vrijdaggebed</span><small>Het uur van je moskee</small></label><input id="jum" type="time"></div>
+    </div>
+  </div>
+  <div class="group">
+    <div class="grouphead">
+      <p class="label">Bijstellen in minuten</p>
+      <p class="hint">Zet de tijden gelijk met de kalender van je moskee.</p>
+    </div>
+    <div class="card" id="steps"></div>
+  </div>
+  <div class="group">
+    <p class="label">Weergave</p>
+    <div class="card"><div class="setrow"><span>Thema</span><div class="seg" id="segTheme"></div></div></div>
+  </div>
+  <p class="note">Tijden via de Aladhan-API. Geen account, geen advertenties, geen tracking.</p>
+</section>
+
+<section class="screen sub" id="month" hidden aria-label="Maandtabel">
+  <div class="mhead">
+    <div class="back"><button id="monthClose" aria-label="Terug"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><h1 id="monthTitle"></h1></div>
+    <div class="mnav"><button id="monthPrev" aria-label="Vorige maand"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button id="monthNext" aria-label="Volgende maand"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>
+  </div>
+  <div class="card mtable" id="monthTable" hidden>
+    <div class="mrow mh"><span>Dag</span><span>Fajr</span><span>Shuruq</span><span>Dhuhr</span><span>Asr</span><span>Maghrib</span><span>Isha</span></div>
+    <div id="monthBody"></div>
+  </div>
+  <p class="hint" id="monthHint" hidden></p>
+  <div class="mfoot"><span id="monthPlace"></span><span id="monthMethod"></span></div>
+</section>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var NAMES=['Fajr','Shuruq','Dhuhr','Asr','Maghrib','Isha'];
+var KEYS=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+var METHODS=[
+  {id:3,name:'Muslim World League',desc:'Fajr bij 18°, Isha bij 17°'},
+  {id:13,name:'Diyanet (Turkije)',desc:'Fajr bij 18°, Isha bij 17°, Turkse kalender'},
+  {id:21,name:'Marokko',desc:'Fajr bij 19°, Isha bij 17°'},
+  {id:12,name:'UOIF (Frankrijk)',desc:'Fajr bij 12°, Isha bij 12°'},
+  {id:5,name:'Egypte',desc:'Fajr bij 19,5°, Isha bij 17,5°'},
+  {id:2,name:'ISNA (Noord-Amerika)',desc:'Fajr bij 15°, Isha bij 15°'},
+  {id:4,name:'Umm al-Qura (Mekka)',desc:'Fajr bij 18,5°, Isha 90 min na Maghrib'},
+  {id:1,name:'Karachi',desc:'Fajr bij 18°, Isha bij 18°'}
+];
+var WD=['zo','ma','di','wo','do','vr','za'];
+var STORE='gebedstijden.v1', CACHE='gebedstijden.cache.v2';
+var DEVICE_TZ=(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}catch(e){return 'UTC'}})();
+
+/* ---------- opslag ---------- */
+function read(k,fallback){try{var v=JSON.parse(localStorage.getItem(k));return v==null?fallback:v}catch(e){return fallback}}
+function write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var state=read(STORE,null);
+if(!state||!state.places||!state.places.length){
+  state={places:[{name:'Deinze',region:'Vlaams Gewest, België',lat:50.9817,lon:3.5311,tz:'Europe/Brussels'}],active:0};
+}
+if(!(state.active>=0&&state.active<state.places.length))state.active=0;
+if(!METHODS.some(function(m){return m.id===state.method}))state.method=3;
+if(state.school!==1)state.school=0;
+if(!Array.isArray(state.offsets)||state.offsets.length!==6)state.offsets=[0,0,0,0,0,0];
+if(['sky','light','dark'].indexOf(state.theme)<0)state.theme='sky';
+if(!/^\d\d:\d\d$/.test(state.jumuah||''))state.jumuah='';
+var cache=read(CACHE,{});
+function place(){return state.places[state.active]}
+function pid(p){return p.lat.toFixed(3)+','+p.lon.toFixed(3)}
+function cid(p){return pid(p)+'|'+state.method+'|'+state.school}
+function method(){for(var i=0;i<METHODS.length;i++)if(METHODS[i].id===state.method)return METHODS[i];return METHODS[0]}
+function adj(t){return t.map(function(x,i){return x+(state.offsets[i]||0)})}
+
+/* ---------- tijd ---------- */
+function nowIn(tz){
+  var o={};
+  try{
+    new Intl.DateTimeFormat('en-GB',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+      .formatToParts(new Date()).forEach(function(x){o[x.type]=x.value});
+  }catch(e){var d=new Date();return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate(),mins:d.getHours()*60+d.getMinutes()}}
+  return {y:+o.year,m:+o.month,d:+o.day,mins:(+o.hour%24)*60+ +o.minute};
+}
+function pad(n){return (n<10?'0':'')+n}
+function dateKey(n,plus){var d=new Date(Date.UTC(n.y,n.m-1,n.d+(plus||0)));return pad(d.getUTCDate())+'-'+pad(d.getUTCMonth()+1)+'-'+d.getUTCFullYear()}
+function dateText(key){
+  var p=key.split('-');
+  return new Intl.DateTimeFormat('nl-BE',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(+p[2],+p[1]-1,+p[0])));
+}
+function toMin(s){return +s.slice(0,2)*60+ +s.slice(3,5)}
+function hhmm(m){return pad(Math.floor(m/60))+':'+pad(m%60)}
+function dur(m){var h=Math.floor(m/60),r=m%60;return (h?h+' u ':'')+r+' min'}
+
+/* ---------- gegevens ---------- */
+var data=null, failed=false, loadToken=0, loadedKey='', view=0;
+function monthKey(p,y,m){return cid(p)+'|'+y+'-'+m}
+function nextMonth(y,m){return m===12?[y+1,1]:[y,m+1]}
+function getMonth(p,y,m){
+  var k=monthKey(p,y,m);
+  if(cache[k])return Promise.resolve(cache[k]);
+  var url='https://api.aladhan.com/v1/calendar/'+y+'/'+m+'?latitude='+p.lat+'&longitude='+p.lon+'&method='+state.method+'&school='+state.school+(p.tz?'&timezonestring='+encodeURIComponent(p.tz):'');
+  return fetch(url).then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json()}).then(function(j){
+    var days=j.data.map(function(d){return KEYS.map(function(x){return toMin(d.timings[x])})});
+    var tz=j.data[0]&&j.data[0].meta&&j.data[0].meta.timezone;
+    if(!p.tz&&tz){p.tz=tz;write(STORE,state)}
+    cache[k]=days;
+    return days;
+  });
+}
+function getDay(p,key){
+  var a=key.split('-');
+  return getMonth(p,+a[2],+a[1]).then(function(d){var t=d[+a[0]-1];if(!t)throw new Error('dag ontbreekt');return t});
+}
+// bewaar per bewaarde plaats alleen deze en volgende maand, zodat de app zonder internet blijft werken
+function persist(){
+  var keep={},out={};
+  state.places.forEach(function(p){
+    var n=nowIn(p.tz||DEVICE_TZ),nx=nextMonth(n.y,n.m);
+    keep[monthKey(p,n.y,n.m)]=1;keep[monthKey(p,nx[0],nx[1])]=1;
+  });
+  Object.keys(cache).forEach(function(k){if(keep[k])out[k]=cache[k]});
+  write(CACHE,out);
+}
+function prefetch(p,n){
+  var nx=nextMonth(n.y,n.m);
+  if(cache[monthKey(p,nx[0],nx[1])])return;
+  getMonth(p,nx[0],nx[1]).then(persist).catch(function(){});
+}
+function load(){
+  var p=place(), n=nowIn(p.tz||DEVICE_TZ), k0=dateKey(n), k1=dateKey(n,1), token=++loadToken;
+  loadedKey=cid(p)+'|'+k0;
+  return Promise.all([getDay(p,k0),getDay(p,k1)]).then(function(r){
+    if(token!==loadToken)return;
+    data={k0:k0,k1:k1,today:r[0],tomorrow:r[1]};failed=false;
+    persist();prefetch(p,n);render();
+  }).catch(function(){
+    if(token!==loadToken)return;
+    data=null;failed=true;render();
+  });
+}
+
+/* ---------- boog ---------- */
+function arcSvg(t,now,nextIdx,jum){
+  var S=t[1],M=t[4],t0=t[0]-40,t1=t[5]+40,W=342;
+  function X(m){return (m-t0)/(t1-t0)*W}
+  function Y(m){
+    if(m>=S&&m<=M)return 120-90*Math.sin(Math.PI*(m-S)/(M-S));
+    var d=m<S?(S-m)/(S-t0):(m-M)/(t1-M);
+    return 120+42*Math.sin(Math.PI/2*Math.min(1,d));
+  }
+  var pts=[],step=(t1-t0)/90,i;
+  for(i=0;i<=90;i++){var m=t0+i*step;pts.push(X(m).toFixed(1)+','+Y(m).toFixed(1))}
+  var s='<line x1="0" y1="120" x2="'+W+'" y2="120" stroke="var(--fg)" stroke-opacity=".28" stroke-width="1"/>'+
+        '<path fill="none" stroke="var(--fg)" stroke-opacity=".5" stroke-width="1.5" stroke-linejoin="round" d="M'+pts.join(' L')+'"/>';
+  var P=t.map(function(m){return [X(m),Y(m)]});
+  if(now!=null&&now>=t0&&now<=t1){
+    var sx=X(now),sy=Y(now),near=1e9;
+    P.forEach(function(p){near=Math.min(near,Math.hypot(p[0]-sx,p[1]-sy))});
+    var glow=Math.max(0,Math.min(20,near-7));
+    if(glow>11.5)s+='<circle cx="'+sx.toFixed(1)+'" cy="'+sy.toFixed(1)+'" r="'+glow.toFixed(1)+'" fill="var(--sun)" fill-opacity=".26"/>';
+    s+='<circle cx="'+sx.toFixed(1)+'" cy="'+sy.toFixed(1)+'" r="'+(sy>120?8:11)+'" fill="var(--sun)"/>';
+  }
+  P.forEach(function(p,i){
+    var x=p[0].toFixed(1),y=p[1].toFixed(1);
+    if(i===nextIdx)s+='<circle cx="'+x+'" cy="'+y+'" r="6" fill="var(--hole)" stroke="var(--accent)" stroke-width="3"/>';
+    else if(now!=null&&t[i]<=now)s+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="var(--fg)"/>';
+    else s+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="var(--hole)" stroke="var(--fg)" stroke-width="1.5"/>';
+  });
+  var L=[[0,22,'middle'],[-8,-10,'end'],[0,-14,'middle'],[11,-2,'start'],[9,-8,'start'],[0,21,'middle']];
+  P.forEach(function(p,i){
+    s+='<text x="'+(p[0]+L[i][0]).toFixed(1)+'" y="'+(p[1]+L[i][1]).toFixed(1)+'" text-anchor="'+L[i][2]+'"'+(i===nextIdx?' class="next"':'')+'>'+(jum&&i===2?"Jumu'ah":NAMES[i])+'</text>';
+  });
+  return s;
+}
+
+/* ---------- hoofdscherm ---------- */
+var SKY_TOP={day:'#A9D3EE',dusk:'#232B55',dawn:'#0B1230',night:'#060A1C'};
+function skyFor(t,now){
+  if(now<t[0]-30)return 'night';
+  if(now<t[1]+30)return 'dawn';
+  if(now<t[4]-75)return 'day';
+  if(now<t[5])return 'dusk';
+  return 'night';
+}
+function setSky(s){
+  if(document.documentElement.getAttribute('data-sky')!==s){
+    document.documentElement.setAttribute('data-sky',s);
+    $('themeColor').setAttribute('content',SKY_TOP[s]);
+  }
+}
+var CHEV_R='<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+var CHEV_L='<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+function isFriday(key){var a=key.split('-');return new Date(Date.UTC(+a[2],+a[1]-1,+a[0])).getUTCDay()===5}
+// het vrijdaggebed vervangt Dhuhr op vrijdag, als het uur is ingesteld en voor Asr valt
+function jumuahFor(key,t){
+  if(!state.jumuah||!isFriday(key))return null;
+  var j=toMin(state.jumuah);
+  return j<t[3]?j:null;
+}
+function rowHtml(i,time,cls,tag,dhuhr){
+  var name=NAMES[i],extra=i===1?' <small>zonsopkomst</small>':'';
+  if(i===2&&dhuhr!=null){name="Jumu'ah";extra=' <small>Dhuhr begint om '+hhmm(dhuhr)+'</small>'}
+  if(tag)extra=' <small>'+tag+'</small>';
+  return '<li class="'+cls+(i===1?' shuruq':'')+'"><span>'+name+extra+'</span><span>'+hhmm(time)+'</span></li>';
+}
+function render(){
+  var p=place();
+  $('placeName').textContent=p.name;
+  $('methodName').textContent=method().name;
+  if(state.theme==='light')setSky('day');else if(state.theme==='dark')setSky('night');
+  var n=nowIn(p.tz||DEVICE_TZ);
+  if(cid(p)+'|'+dateKey(n)!==loadedKey){data=null;failed=false;view=0;load()}
+  $('msg').hidden=!failed;
+  $('list').hidden=failed||!data;
+  $('dayBtn').hidden=!data;
+  if(!data){
+    $('date').textContent=dateText(dateKey(n));
+    $('arc').innerHTML='';$('nextName').innerHTML='&nbsp;';$('nextTime').textContent='';
+    $('count').textContent=failed?'':'Tijden laden…';$('nextLabel').textContent='Volgend gebed';
+    return;
+  }
+  var t=adj(data.today), now=n.mins;
+  if(state.theme==='sky')setSky(skyFor(t,now));
+  if(view===1){
+    var tm=adj(data.tomorrow);
+    $('date').textContent=dateText(data.k1);
+    var Jt=jumuahFor(data.k1,tm);
+    $('arc').innerHTML=arcSvg(tm,null,-1,Jt!=null);
+    $('nextLabel').textContent='Morgen';
+    $('nextName').textContent='Fajr';$('nextTime').textContent=hhmm(tm[0]);
+    $('count').textContent='zonsopkomst om '+hhmm(tm[1]);
+    $('list').innerHTML=tm.map(function(x,i){return i===2&&Jt!=null?rowHtml(i,Jt,'',null,x):rowHtml(i,x,'')}).join('');
+    $('dayBtn').innerHTML=CHEV_L+'Vandaag';
+    return;
+  }
+  // volgend gebed (Shuruq telt niet mee)
+  var J=jumuahFor(data.k0,t),eff=t.slice(),next=-1,i;
+  if(J!=null)eff[2]=J;
+  for(i=0;i<6;i++){if(i!==1&&eff[i]>now){next=i;break}}
+  var nextTime,wait,label='Volgend gebed';
+  if(next>=0){nextTime=eff[next];wait=nextTime-now}
+  else{nextTime=adj(data.tomorrow)[0];wait=1440-now+nextTime;label='Volgend gebed, morgen'}
+  // lopend gebed
+  var cur=-1,left=null;
+  if(now>=t[5])cur=5;
+  else if(now>=t[4]){cur=4;left=t[5]-now}
+  else if(now>=t[3]){cur=3;left=t[4]-now}
+  else if(now>=Math.min(t[2],eff[2])){cur=2;left=t[3]-now}
+  else if(now>=t[0]&&now<t[1]){cur=0;left=t[1]-now}
+  $('date').textContent=dateText(data.k0);
+  $('arc').innerHTML=arcSvg(t,now,next,J!=null);
+  $('nextLabel').textContent=label;
+  $('nextName').textContent=next<0?'Fajr':next===2&&J!=null?"Jumu'ah":NAMES[next];
+  $('nextTime').textContent=hhmm(nextTime);
+  $('count').textContent='over '+dur(wait)+(next===2&&J!=null?' · het uur van je moskee':'');
+  $('list').innerHTML=t.map(function(x,i){
+    var d=i===2&&J!=null?x:null,time=eff[i];
+    if(i===next)return rowHtml(i,time,'is-next',null,d);
+    if(i===cur)return rowHtml(i,time,'now',left!=null?'nu, nog '+dur(left):'nu',d);
+    return rowHtml(i,time,time<=now?'past':'',null,d);
+  }).join('');
+  $('dayBtn').innerHTML='Morgen'+CHEV_R;
+}
+
+/* ---------- locatie ---------- */
+function show(id){
+  ['main','panel','settings','month'].forEach(function(x){$(x).hidden=x!==id});
+  window.scrollTo(0,0);
+}
+function openPanel(){
+  show('panel');
+  $('q').value='';$('results').hidden=true;$('searchHint').hidden=true;$('hereHint').hidden=true;
+  renderSaved();window.scrollTo(0,0);
+}
+function closePanel(){show('main');view=0;render()}
+function choose(p){
+  var id=pid(p),idx=-1;
+  state.places.forEach(function(x,i){if(pid(x)===id)idx=i});
+  if(idx<0){state.places.push(p);if(state.places.length>8)state.places.splice(state.active===0?1:0,1);idx=state.places.indexOf(p)}
+  state.active=idx;write(STORE,state);
+  data=null;failed=false;loadedKey='';
+  closePanel();
+}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function renderSaved(){
+  var box=$('saved');box.textContent='';
+  state.places.forEach(function(p,i){
+    var row=el('div','row'+(i===state.active?' active':''));
+    var pick=el('button','pick');
+    var txt=el('span');txt.appendChild(el('b',null,p.name));if(p.region)txt.appendChild(el('span',null,p.region));
+    pick.appendChild(txt);
+    if(i===state.active){
+      pick.insertAdjacentHTML('beforeend','<svg role="img" aria-label="Actief" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>');
+    }
+    pick.addEventListener('click',function(){choose(p)});
+    row.appendChild(pick);
+    if(i!==state.active){
+      var del=el('button','del');del.setAttribute('aria-label',p.name+' verwijderen');
+      del.innerHTML='<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      del.addEventListener('click',function(){
+        var active=place();state.places.splice(state.places.indexOf(p),1);state.active=state.places.indexOf(active);
+        write(STORE,state);renderSaved();
+      });
+      row.appendChild(del);
+    }
+    box.appendChild(row);
+  });
+}
+var searchTimer=0,searchToken=0;
+function search(){
+  var q=$('q').value.trim(),token=++searchToken,box=$('results'),hint=$('searchHint');
+  if(q.length<2){box.hidden=true;hint.hidden=true;return}
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=nl&format=json')
+  .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
+  .then(function(j){
+    if(token!==searchToken)return;
+    var list=j.results||[];box.textContent='';
+    if(!list.length){box.hidden=true;hint.textContent='Geen plaats gevonden voor "'+q+'".';hint.hidden=false;return}
+    hint.hidden=true;
+    list.forEach(function(r){
+      var region=[r.admin1,r.country].filter(function(x){return x&&x!==r.name}).join(', ');
+      var b=el('button');b.appendChild(el('b',null,r.name));b.appendChild(el('span',null,region));
+      b.addEventListener('click',function(){choose({name:r.name,region:region,lat:r.latitude,lon:r.longitude,tz:r.timezone||''})});
+      box.appendChild(b);
+    });
+    box.hidden=false;
+  }).catch(function(){
+    if(token!==searchToken)return;
+    box.hidden=true;hint.textContent='Zoeken lukt nu niet. Controleer je internetverbinding.';hint.hidden=false;
+  });
+}
+function useHere(){
+  var hint=$('hereHint');
+  if(!navigator.geolocation){hint.textContent='Dit toestel geeft geen locatie door.';hint.hidden=false;return}
+  hint.textContent='Locatie bepalen…';hint.hidden=false;
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=+pos.coords.latitude.toFixed(4),lon=+pos.coords.longitude.toFixed(4);
+    fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=nl')
+    .then(function(r){return r.json()})
+    .then(function(j){return {name:j.city||j.locality||'Mijn locatie',region:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')}})
+    .catch(function(){return {name:'Mijn locatie',region:''}})
+    .then(function(n){choose({name:n.name,region:n.region,lat:lat,lon:lon,tz:''})});
+  },function(err){
+    hint.textContent=err&&err.code===1?'Je hebt geen toestemming gegeven voor je locatie. Zoek je plaats hierboven.':'Je locatie kon niet bepaald worden. Zoek je plaats hierboven.';
+  },{timeout:15000,maximumAge:600000});
+}
+
+/* ---------- instellingen ---------- */
+var CHECK='<svg role="img" aria-label="Gekozen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function seg(id,options,value,onPick){
+  var box=$(id);box.textContent='';
+  options.forEach(function(o){
+    var b=el('button',null,o[1]);b.setAttribute('aria-pressed',String(o[0]===value));
+    b.addEventListener('click',function(){onPick(o[0])});box.appendChild(b);
+  });
+}
+function saveSettings(){write(STORE,state);renderSettings()}
+function renderSettings(){
+  var m=method();$('mName').textContent=m.name;$('mDesc').textContent=m.desc;
+  var list=$('methodList');list.textContent='';
+  METHODS.forEach(function(x){
+    var b=el('button','opt'),s=el('span');
+    s.appendChild(el('b',null,x.name));s.appendChild(el('span',null,x.desc));b.appendChild(s);
+    if(x.id===state.method)b.insertAdjacentHTML('beforeend',CHECK);
+    b.addEventListener('click',function(){state.method=x.id;list.hidden=true;$('methodBtn').setAttribute('aria-expanded','false');saveSettings()});
+    list.appendChild(b);
+  });
+  seg('segAsr',[[0,'Standaard'],[1,'Hanafi']],state.school,function(v){state.school=v;saveSettings()});
+  seg('segTheme',[['sky','Hemel'],['light','Licht'],['dark','Donker']],state.theme,function(v){
+    state.theme=v;saveSettings();
+    if(v==='light')setSky('day');else if(v==='dark')setSky('night');
+    else if(data)setSky(skyFor(adj(data.today),nowIn(place().tz||DEVICE_TZ).mins));
+  });
+  $('jum').value=state.jumuah||'';
+  var steps=$('steps');steps.textContent='';
+  [0,2,3,4,5].forEach(function(i){
+    var row=el('div','step'),ctl=el('span','ctl'),v=state.offsets[i];
+    var minus=el('button',null,'\u2212'),plus=el('button',null,'+'),val=el('span','val'+(v?' set':''),(v>0?'+':v<0?'\u2212':'')+Math.abs(v));
+    minus.setAttribute('aria-label',NAMES[i]+' een minuut vroeger');plus.setAttribute('aria-label',NAMES[i]+' een minuut later');
+    minus.addEventListener('click',function(){state.offsets[i]=Math.max(-30,v-1);saveSettings()});
+    plus.addEventListener('click',function(){state.offsets[i]=Math.min(30,v+1);saveSettings()});
+    row.appendChild(el('span',null,NAMES[i]));ctl.appendChild(minus);ctl.appendChild(val);ctl.appendChild(plus);row.appendChild(ctl);
+    steps.appendChild(row);
+  });
+}
+function openSettings(){$('methodList').hidden=true;$('methodBtn').setAttribute('aria-expanded','false');renderSettings();show('settings')}
+
+/* ---------- maand ---------- */
+var mon={y:0,m:0},monToken=0;
+function openMonth(){var n=nowIn(place().tz||DEVICE_TZ);mon={y:n.y,m:n.m};show('month');renderMonth()}
+function shiftMonth(d){var x=new Date(Date.UTC(mon.y,mon.m-1+d,1));mon={y:x.getUTCFullYear(),m:x.getUTCMonth()+1};renderMonth()}
+function renderMonth(){
+  var p=place(),n=nowIn(p.tz||DEVICE_TZ),key=cid(p)+'|'+mon.y+'-'+mon.m,token=++monToken;
+  var title=new Intl.DateTimeFormat('nl-BE',{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(mon.y,mon.m-1,1)));
+  $('monthTitle').textContent=title.charAt(0).toUpperCase()+title.slice(1)+(mon.y!==n.y?' '+mon.y:'');
+  $('monthPlace').textContent=p.name;$('monthMethod').textContent=method().name;
+  var body=$('monthBody'),hint=$('monthHint'),table=$('monthTable');
+  function draw(days){
+    body.textContent='';var todayRow=null;
+    days.forEach(function(raw,i){
+      var t=adj(raw),day=i+1,wd=new Date(Date.UTC(mon.y,mon.m-1,day)).getUTCDay();
+      var isToday=mon.y===n.y&&mon.m===n.m&&day===n.d;
+      var row=el('div','mrow'+(isToday?' today':wd===5?' fri':''));
+      row.appendChild(el('span',null,WD[wd]+' '+day));
+      t.forEach(function(x){row.appendChild(el('span',null,hhmm(x)))});
+      body.appendChild(row);if(isToday)todayRow=row;
+    });
+    hint.hidden=true;table.hidden=false;
+    if(todayRow&&todayRow.scrollIntoView)todayRow.scrollIntoView({block:'nearest'});
+  }
+  if(cache[key]){draw(cache[key]);return}
+  table.hidden=true;hint.textContent='Tijden laden…';hint.hidden=false;
+  getMonth(p,mon.y,mon.m).then(function(days){if(token===monToken)draw(days)}).catch(function(){
+    if(token!==monToken)return;
+    hint.textContent='De maand kon niet geladen worden. Controleer je internetverbinding.';
+  });
+}
+
+/* ---------- start ---------- */
+$('setBtn').addEventListener('click',openSettings);
+$('setClose').addEventListener('click',closePanel);
+$('methodBtn').addEventListener('click',function(){var l=$('methodList');l.hidden=!l.hidden;this.setAttribute('aria-expanded',String(!l.hidden))});
+$('jum').addEventListener('change',function(){state.jumuah=/^\d\d:\d\d$/.test(this.value)?this.value:'';write(STORE,state)});
+$('monthBtn').addEventListener('click',openMonth);
+$('monthClose').addEventListener('click',closePanel);
+$('monthPrev').addEventListener('click',function(){shiftMonth(-1)});
+$('monthNext').addEventListener('click',function(){shiftMonth(1)});
+$('placeBtn').addEventListener('click',openPanel);
+$('closeBtn').addEventListener('click',closePanel);
+$('q').addEventListener('input',function(){clearTimeout(searchTimer);searchTimer=setTimeout(search,300)});
+$('hereBtn').addEventListener('click',useHere);
+$('dayBtn').addEventListener('click',function(){view=view?0:1;render()});
+$('retry').addEventListener('click',function(){failed=false;loadedKey='';render()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('main').hidden)closePanel()});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&!$('main').hidden)render()});
+setInterval(function(){if(!$('main').hidden&&!failed)render()},15000);
+render();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(function(){})}
+})();
+</script>
+</body>
+</html>
